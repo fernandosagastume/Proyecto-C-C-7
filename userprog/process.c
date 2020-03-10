@@ -482,7 +482,7 @@ setup_stack (char * file_name,void **esp)
     int *argReferences = malloc(argc + 1);
     //Se escribe en el stack los argumentos de en reversa.
     int notLastArg = argc - 1;
-    for(int arg = notLastArg; arg >= 0; arg++){
+    for(int arg = notLastArg; arg >= 0; arg--){
     
       int argLen = strlen(argv[arg]) + 1; //El tamaño del arg mas 1 para el /0
       *esp -= sizeof(char *)*argLen; //Se abre espacio en el stack para cada arg
@@ -491,10 +491,34 @@ setup_stack (char * file_name,void **esp)
 
     }
 
-    argv[argc] = 0; //Se agrega null al final
+    //argv[argc] = 0; //Se agrega null al final
 
+    //Se realiza word align de 0
+    int modulus = (int)*esp%4;
+    if(modulus != 0){
+      *esp-=sizeof(char);
+      memset(*esp,(char)0,sizeof(char));
+    }
     
-    
+    //Push de los argumentos en el stack
+     for(int i = notLastArg; i >= 0; i--){
+        *esp-=sizeof(int);
+        memcpy(*esp,&argReferences[i],sizeof(int));
+  }
+
+    //Se hace push de la ultima referencia de argv (argv[0])
+    int argv_ = *esp;
+    *esp-=sizeof(int);
+    memcpy(*esp,&argv_,sizeof(int));
+
+    //Se hace push de la cantidad de argumentos 
+    *esp-=sizeof(int);
+    memcpy(*esp,&argc,sizeof(int));
+
+    //Se hace push de return address 0 
+    int retAdd = 0;
+    *esp-=sizeof(int);
+    memcpy(*esp,&retAdd,sizeof(int));
 
     return success;
     //Se libera memoria
