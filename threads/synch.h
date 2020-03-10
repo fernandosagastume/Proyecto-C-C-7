@@ -22,6 +22,7 @@ struct lock
   {
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
+    struct list_elem lock_elemen; //Utilizado para la lista holdingLocks
   };
 
 void lock_init (struct lock *);
@@ -43,8 +44,10 @@ void cond_broadcast (struct condition *, struct lock *);
 
 //Mis funciones 
 //------------------------------------------------------------------------------------------------------------------
-bool priorityCompareCondvarSemaphore(const struct list_elem *a, const struct list_elem *b,void *aux); /*Función utilizada 
-//para ordenar listas*/
+//Funciones utilizadas para ordenar listas
+bool priorityCompareCondvarSemaphore(const struct list_elem *a, const struct list_elem *b,void *aux); 
+bool priorityCompareDonors(const struct list_elem *a, const struct list_elem *b,void *aux); 
+bool priorityCompareWaiters(const struct list_elem *a, const struct list_elem *b,void *aux);
 //------------------------------------------------------------------------------------------------------------------
 
 /* Optimization barrier.

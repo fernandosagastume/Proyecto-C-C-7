@@ -136,9 +136,10 @@ pintos_init (void)
     // TODO: no command line passed to kernel. Run interactively 
   }
 
+  int exit_status = 1;
   /* Finish up. */
   shutdown ();
-  thread_exit ();
+  thread_exit (exit_status);
 }
 
 /* Clear the "BSS", a segment that should be initialized to

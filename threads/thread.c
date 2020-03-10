@@ -295,12 +295,12 @@ thread_tid (void)
 /* Deschedules the current thread and destroys it.  Never
    returns to the caller. */
 void
-thread_exit (void) 
+thread_exit (int exit_status) 
 {
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
-  process_exit ();
+  process_exit (exit_status);
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
@@ -393,7 +393,7 @@ thread_set_priority (int new_priority)
     thread_current ()->priorityInit = new_priority;
     thread_current ()->priority = new_priority;
   }
-  
+
   checkMaxCurrentT();
   intr_set_level(old_level);
 }
@@ -402,8 +402,21 @@ thread_set_priority (int new_priority)
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
-}
+  struct thread *th;
+  /*Primero se verifica si hay donantes, en caso de que si se verifica si la prioridad original es mayor o no 
+    que la del donante con la maxima prioridad*/
+  if(!list_empty(&thread_current()->donantes)){
+      th = list_entry(list_max(&thread_current()->donantes, priorityCompareTATB, NULL), struct thread, donantesElem);
+    if(thread_current()->priorityInit > th->priority){
+      return thread_current ()->priorityInit;
+    }
+    else{
+      return th->priority;
+    }
+  }else {
+  return thread_current ()->priorityInit;
+  }
+    }
 
 /* --------------------------------------------------------------------------------------------------- */
 /*Función que decide si se hace yield() al CPU basandose en la ready list y current thread*/
@@ -422,12 +435,49 @@ checkMaxCurrentT(void){
   }
 }
 
-/*Implementa priority scheduling y donación de prioridad*/
+/*Implementa donación de prioridad*/
 void
-priorityDonation (void) 
+priorityDonation (struct thread *threadholder, int donation) 
 {
-  struct thread *thactual = thread_current();
-  //struct lock *lck = thactual->waitingLock;
+    if(!(donation <= threadholder->priority))
+      threadholder->priority = donation;
+    else
+      return;
+
+    enum intr_level old_level = intr_disable();
+    //Se agrega en la lista de donantes del holder el current thread
+    list_insert_ordered(&threadholder->donantes, 
+                        &thread_current()->donantesElem, priorityCompareDonors, NULL);
+    intr_set_level(old_level);
+      
+      shakeUpReadyList(threadholder);
+
+      //Se verifica si se debe hacer donacion
+    //struct lock *l = threadholder->waitingLock;
+    //Se verifica en caso de que se pueda hacer nested donation
+    /*if(l != NULL){
+      struct thread *holderN = l->holder; //Se prepara el thread para donarle
+      priorityDonation(holderN, donation); //Se dona al holder
+    }*/
+}
+
+//Devuelve la donación una vez hace release del lock
+void priorityDonationInverse(struct thread *currT, struct lock *lock){
+  list_remove(&lock->lock_elemen); //Se elimina el lock de la lista de holdingLocks
+
+  currT->priority = currT->priorityInit;//Se regresa la prioridad real del thread  
+
+}
+//Función que reordena la ready list en caso de que haya lock holder este en la ready list
+void 
+shakeUpReadyList(struct thread *thd){
+  if(thd->status == THREAD_READY){
+  list_remove(&thd->elem);
+  enum intr_level old_level = intr_disable();
+  list_insert_ordered(&ready_list, 
+                        &thd->elem, priorityCompareTATB, NULL);
+  intr_set_level(old_level);
+  }
 }
 /* --------------------------------------------------------------------------------------------------- */
 
@@ -506,9 +556,10 @@ kernel_thread (thread_func *function, void *aux)
 {
   ASSERT (function != NULL);
 
+  int error_status = 1;
   intr_enable ();       /* The scheduler runs with interrupts off. */
   function (aux);       /* Execute the thread function. */
-  thread_exit ();       /* If function() returns, kill the thread. */
+  thread_exit (error_status);       /* If function() returns, kill the thread. */
 }
 
 /* Returns the running thread. */
