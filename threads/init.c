@@ -136,7 +136,7 @@ pintos_init (void)
     // TODO: no command line passed to kernel. Run interactively 
   }
 
-  int exit_status = 1;
+  int exit_status = 0;
   /* Finish up. */
   shutdown ();
   thread_exit (exit_status);

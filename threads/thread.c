@@ -556,10 +556,10 @@ kernel_thread (thread_func *function, void *aux)
 {
   ASSERT (function != NULL);
 
-  int error_status = 1;
+  int exit_status = 0;
   intr_enable ();       /* The scheduler runs with interrupts off. */
   function (aux);       /* Execute the thread function. */
-  thread_exit (error_status);       /* If function() returns, kill the thread. */
+  thread_exit (exit_status);       /* If function() returns, kill the thread. */
 }
 
 /* Returns the running thread. */

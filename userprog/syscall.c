@@ -19,3 +19,12 @@ syscall_handler (struct intr_frame *f UNUSED)
   int exit_status = 0; 
   thread_exit (exit_status);
 }
+ void 
+ syscall_halt (void){
+ 	shutdown_power_off();
+ } 
+
+void 
+syscall_exit (int exit_status){
+	thread_exit(exit_status);
+}

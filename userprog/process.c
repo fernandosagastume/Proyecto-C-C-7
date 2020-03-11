@@ -66,7 +66,7 @@ start_process (void *file_name_)
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  int exit_status = 0;
+  int exit_status = -1;
   if (!success) 
     thread_exit(exit_status);
 
@@ -317,12 +317,12 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
-
+  free(copy); //Libera memoria
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
   return success;
-  free(copy); //Libera memoria
+
 }
 
 /* load() helpers. */
@@ -491,19 +491,25 @@ setup_stack (char * file_name,void **esp)
 
     }
 
-    //argv[argc] = 0; //Se agrega null al final
+    argReferences[argc] = 0; //Se agrega char* 0 al final
 
     //Se realiza word align de 0
     int modulus = (int)*esp%4;
-    if(modulus != 0){
-      *esp-=sizeof(char);
-      memset(*esp,(char)0,sizeof(char));
+
+    if(modulus!=0){
+    *esp-=sizeof(char);
+    memset(*esp,(char)0,sizeof(char));
     }
+
+    //Word align de 0
+    //uint8_t wordA = 0;
+    //*esp-=sizeof(uint8_t);
+    //memset(*esp,wordA,sizeof(uint8_t));
     
     //Push de los argumentos en el stack
-     for(int i = notLastArg; i >= 0; i--){
+     for(int arg = argc; arg >= 0; arg--){
         *esp-=sizeof(int);
-        memcpy(*esp,&argReferences[i],sizeof(int));
+        memcpy(*esp,&argReferences[arg],sizeof(int));
   }
 
     //Se hace push de la ultima referencia de argv (argv[0])

@@ -81,7 +81,7 @@ kill (struct intr_frame *f)
      
   /* The interrupt frame's code segment value tells us where the
      exception originated. */
-  int exit_status = 0;
+  int exit_status = -1;
 
   switch (f->cs)
     {
