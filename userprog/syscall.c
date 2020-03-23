@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "devices/shutdown.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -16,8 +17,7 @@ static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
   printf ("system call!\n");
-  int exit_status = 0; 
-  thread_exit (exit_status);
+  thread_exit ();
 }
  void 
  syscall_halt (void){
@@ -25,6 +25,6 @@ syscall_handler (struct intr_frame *f UNUSED)
  } 
 
 void 
-syscall_exit (int exit_status){
-	thread_exit(exit_status);
+syscall_exit (int exit_status UNUSED){
+	thread_exit();
 }

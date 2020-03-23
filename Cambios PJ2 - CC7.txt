@@ -4,11 +4,9 @@ Cambios PJ2 - CC7:
 
 * Se realizó cambio en la función process_execute() en el archivo process.c, solamente se sustituyo el *filename* que se manda de argumento en thread_create() por *exec_name* variable que extrae el nombre del proceso del raw filename. Leer la pintos guide para información de esto. 
 
-* Se modifica la función thread_exit(), kernel_thread() y process_exit(), en los archivos thread.c, thread.h, process.c, y process.h. Se agrega error_status que se utiliza para el syscall exit del user program o process termination message. En kernel_thread() se agrega el nuevo campo en la llamada a thread_exit() y se define el error_status. Cuando error_status = -1 significa que hubo error, error_status = 0 signfica hubo success. Se modifico el thread_exit en el archivo threads/init.c, threads/thread.c, y  además se modificó en los archivos userprog/exception.c, y userprog/process.c.
-
 *Se cambió la función setup_stack() ubicada en userprog/process.c, se le agrego un nuevo argumento a la función "char *filename". Se modificó tambien la función load() ubicada tambien en userprog/process.c, donde por medio de un tokenizer se hace split del file_name, con el fin de sacar el nombre del file ya que file_name viene en formato file_name = "argname arg1 arg2 ...". Luego se pasa ese argname como argumento al file system.
 
-* En setup_stack(), se hizo lo mismo de tokenizar el char *filename para sacar los args y guardarlos en un array. Luego se sacan en reversa los argumentos del filename, y se meten en el stack, en este proceso también se abre espacio en el stack para que quepa el \0 al final de cada arg. Una vez los args metidos en el stack, se coloca null al final. 
+* En setup_stack(), se hizo lo mismo de tokenizar el char *filename para sacar los args y guardarlos en un array. Luego se sacan en reversa los argumentos del filename, y se meten en el stack, en este proceso también se abre espacio en el stack para que quepa el \0 al final de cada arg. Luego se hace un word align de 0, seguido de eso, se mete un char * 0. Luego se meten las referencias de cada arg igualmenten en reversa, luego se coloca la referencia del ulitmo argv (argv[0]), luego se mete la cantidad de argumentos argc y por ultimo un return default que es 0. 
 
 //------------------------------------- Argument Passing ----------------------------------------------------//
 
