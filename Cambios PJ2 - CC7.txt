@@ -1,5 +1,7 @@
 Cambios PJ2 - CC7:
 
+**IMPORTANTE: Se modificó el lock arquire y release a su estado incial con fines de que no interfiera con el proyecto 2**
+
 //------------------------------------- Argument Passing----------------------------------------------------//
 
 * Se realizó cambio en la función process_execute() en el archivo process.c, solamente se sustituyo el *filename* que se manda de argumento en thread_create() por *exec_name* variable que extrae el nombre del proceso del raw filename. Leer la pintos guide para información de esto. 
