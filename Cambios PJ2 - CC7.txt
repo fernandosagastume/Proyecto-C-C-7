@@ -17,6 +17,9 @@ Cambios PJ2 - CC7:
 * Se agrega las siguientes funciones en userprog/syscall.h y userprog/syscall.c:
 	- void syscall_halt (void); 
 	- void syscall_exit (int exit_status);
+	- bool syscall_create(const char* file, unsigned initial_size);
+	- bool syscall_remove(const char* file);
 * Para referencia de estas funciones ver la guia de pintos.
-
+* Se agrega la funcion sycall_create, que basicamente crea un nuevo archivo con un tamaño inicial de bytes y devuelve verdadero o falso en función de si se pudo crear de manera exitosa. La creación del archivo se lleva a cabo por medio de filesys_create(). Se utiliza un lock para prevenir lecturas o escrituras antes de que el archivo sea creado.
+* Para la función syscall_remove se lleva a cabo la misma metodología que en syscall_create. 
 //------------------------------------- System Calls --------------------------------------------------------//
