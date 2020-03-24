@@ -21,5 +21,9 @@ Cambios PJ2 - CC7:
 	- bool syscall_remove(const char* file);
 * Para referencia de estas funciones ver la guia de pintos.
 * Se agrega la funcion sycall_create, que basicamente crea un nuevo archivo con un tamaño inicial de bytes y devuelve verdadero o falso en función de si se pudo crear de manera exitosa. La creación del archivo se lleva a cabo por medio de filesys_create(). Se utiliza un lock para prevenir lecturas o escrituras antes de que el archivo sea creado.
-* Para la función syscall_remove se lleva a cabo la misma metodología que en syscall_create. 
+* Para la función syscall_remove se lleva a cabo la misma metodología que en syscall_create.
+* La función syscall_open basicamente es abrir un archivo con un nombre dado, y devolver devolver un file descriptor el cual fue asignado por el thread que lo abrió. Para esta función se necesito crear varias cosas, entre ellas struct fileDescriptor; en el archivo userprog/syscall.c el cual sirve para llevar control de cada file, file descriptor y la lista de file descriptors del thread actual. También se modificó la threads/thread.h y threads/thread.c en donde se agregaron y se incializaron (en la función init_thread() en threads/thread.c) respectivamente los siguientes dos campos:
+	- int fdSZ;                            /*file descriptor size*/
+    - struct list fdList;                 /*Una lista con los file descriptors del thread actual*/ 
+
 //------------------------------------- System Calls --------------------------------------------------------//

@@ -605,6 +605,12 @@ init_thread (struct thread *t, const char *name, int priority)
   t->waitingLock = NULL;
   list_init(&t->donantes);
   //--------------------------------------- 
+  /*Inicialización de campos del proyecto 2*/
+  //--------------------------------------------
+   t->fdSZ = 2; //Se inicializa en STDERR, 0 es para STDIN y 1 para STDOUT
+   list_init(&t->fdList); //Lista donde se guardan los file descriptors del thread actual
+
+  //--------------------------------------------
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
