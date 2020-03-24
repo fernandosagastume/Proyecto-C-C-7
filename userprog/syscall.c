@@ -77,9 +77,9 @@ syscall_open(const char* file){
 	int fileDescriptor;
 	struct file* file_ = filesys_open(file);
 	if(file_ == NULL){
-		lock_release(&lockFS);
 		//The file could not be opened, file descriptor -> -1
 		fileDescriptor = -1;
+		lock_release(&lockFS);
 		return fileDescriptor;
 	}
 
