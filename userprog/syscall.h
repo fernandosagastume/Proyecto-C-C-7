@@ -8,4 +8,5 @@ void syscall_exit (int exit_status);
 bool syscall_create(const char* file, unsigned initial_size);
 bool syscall_remove(const char* file);
 int syscall_open(const char* file);
+int syscall_filesize(int fd);
 #endif /* userprog/syscall.h */

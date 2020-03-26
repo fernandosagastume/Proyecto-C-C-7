@@ -4,6 +4,7 @@
 #include <round.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "threads/malloc.h"
 #include <string.h>
 #include "userprog/gdt.h"
 #include "userprog/pagedir.h"
@@ -72,7 +73,7 @@ start_process (void *file_name_)
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
-     arguments on the stack in the form of a `struct intr_frame',
+     arguments on the stack in the form of a `struct intr_fram  e',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
@@ -475,7 +476,6 @@ setup_stack (const char * file_name,void **esp)
       }
     }
 
-    int Bts = 0; 
 
     char **argReferences = malloc(argc*sizeof(char*) + 1);
     //Se escribe en el stack los argumentos de en reversa.
@@ -484,7 +484,7 @@ setup_stack (const char * file_name,void **esp)
     
       int argLen = strlen(argv[arg]) + 1; //El tamaño del arg mas 1 para el /0
       *esp -= sizeof(char *)*argLen; //Se abre espacio en el stack para cada arg
-      Bts += strlen(argv[arg])+1;
+     
       argReferences[arg] = *esp; //Guarda la referencia
       memcpy(*esp, argv[arg], argLen);//Se copia cada arg en el stack
 
@@ -497,35 +497,28 @@ setup_stack (const char * file_name,void **esp)
 
     if(modulus!=0){
     *esp-=sizeof(char);
-    Bts += modulus;
+    
     memset(*esp,(char)0,sizeof(char));
     } 
     
     //Push de los argumentos en el stack
      for(int arg = argc; arg >= 0; arg--){
         *esp-=sizeof(int);
-        Bts += sizeof(int);
         memcpy(*esp,&argReferences[arg],sizeof(int));
   }
 
     //Se hace push de la ultima referencia de argv (argv[0])
     char *argv_ = (char*)*esp;
     *esp-=sizeof(char*);
-    Bts += sizeof (char*);
     memcpy(*esp, argv_ ,sizeof(char*));
 
     //Se hace push de la cantidad de argumentos 
     *esp-=sizeof(int);
-    Bts += sizeof (int);
     memcpy(*esp,&argc,sizeof(int));
 
     //Se hace push de return address 0 
     *esp -= sizeof(void*);
-    Bts += sizeof(void*);
     memcpy(*esp, (void*)&argReferences[argc], sizeof (void*));
-
-    hex_dump(0, *esp, Bts, 1); 
-    hex_dump((int)*esp+Bts, *esp, Bts, 1);
 
     //Se libera memoria
     free(fn_copy);

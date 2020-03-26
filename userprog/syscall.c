@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "threads/malloc.h"
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
 #include "threads/synch.h"
 #include "filesys/filesys.h"
+#include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -98,4 +100,34 @@ syscall_open(const char* file){
   	lock_release(&lockFS);
   	free(fd);
 	return fileDescriptor;
+}
+
+int 
+syscall_filesize(int fd){
+	//File size
+	int fs;
+	lock_acquire(&lockFS);
+	struct thread* curr = thread_current();
+	//Se verifica si hay file descriptors asociados al thread actual
+	if(!list_empty(&curr->fdList)){
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        fs = (int)file_length(fileFD);
+	        lock_release(&lockFS);
+      	   }
+  		}
+  		lock_release(&lockFS);
+	}else{//De forma contraria se devuelve -1 indicando que no hay file descriptors
+		lock_release(&lockFS);
+		fs = -1;
+	}
+
+	return fs;
 }
