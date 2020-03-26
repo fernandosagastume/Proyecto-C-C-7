@@ -9,4 +9,6 @@ bool syscall_create(const char* file, unsigned initial_size);
 bool syscall_remove(const char* file);
 int syscall_open(const char* file);
 int syscall_filesize(int fd);
+int syscall_read(int fd, void* buffer, unsigned size);
+int syscall_write(int fd, const void* buffer, unsigned size);
 #endif /* userprog/syscall.h */

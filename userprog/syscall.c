@@ -10,6 +10,7 @@
 #include "threads/synch.h"
 #include "filesys/filesys.h"
 #include "filesys/file.h"
+#include "devices/input.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -20,7 +21,7 @@ struct lock lockFS;
 
 /*Struct que lleva control de cada file, file descriptor
 y la lista de file descriptors del thread actual*/
-static struct fileDescriptor
+ struct fileDescriptor
 {
 	int fileDescriptor;
 	struct file* file;
@@ -121,6 +122,7 @@ syscall_filesize(int fd){
 	        struct file* fileFD = fd_t->file;
 	        fs = (int)file_length(fileFD);
 	        lock_release(&lockFS);
+	        break;
       	   }
   		}
   		lock_release(&lockFS);
@@ -130,4 +132,87 @@ syscall_filesize(int fd){
 	}
 
 	return fs;
+}
+
+int 
+syscall_read(int fd, void* buffer, unsigned size){
+	//-1 en caso de que no se pueda leer el file
+	int bytes_to_read = -1;
+	lock_acquire(&lockFS);
+
+	struct thread* curr = thread_current();
+	//fd = 1(STDOUT_FILENO), no hay nada para leer
+	//porque se le paso un fd de escritura o
+	//no hay fd en el thread actual
+	if(list_empty(&curr->fdList) || fd == 1){
+		bytes_to_read = 0;
+		lock_release(&lockFS);
+	}
+
+	//fd = 0 lee del teclado usand input_getc
+	else if(fd == 0){
+		//Se castea porque input getc devuelve uint8_t
+		bytes_to_read = (int)input_getc();
+		lock_release(&lockFS);
+	}
+
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        //Se lee el archivo
+	        bytes_to_read = (int)file_read(fileFD,buffer,size);
+	        lock_release(&lockFS);
+	        break;
+      	   }
+  		}
+  	lock_release(&lockFS);
+  	return bytes_to_read;
+}
+
+int 
+syscall_write(int fd, const void* buffer, unsigned size){
+	int bytes_to_write = 0; 
+	lock_acquire(&lockFS);
+
+	struct thread* curr = thread_current();
+
+	//fd = 0(STDIN_FILENO), no hay nada para escribir 
+	//porque se le paso un fd de escritura o
+	//no hay fd en el thread actual
+	if(list_empty(&curr->fdList) || fd == 0){
+		bytes_to_write = 0;
+		lock_release(&lockFS);
+	}
+	//fd = 1 escribe a consola con la funcion putbuf 
+	//(funcion de kernel/console.c)
+	else if(fd == 1){
+		putbuf(buffer,(size_t)size);
+		bytes_to_write = (int)size;
+		lock_release(&lockFS);
+	}
+
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        //Se lee el archivo
+	        bytes_to_write = (int)file_write(fileFD,buffer,size);
+	        lock_release(&lockFS);
+	        break;
+      	   }
+  		}
+
+  	lock_release(&lockFS);
+  	return bytes_to_write;
 }
