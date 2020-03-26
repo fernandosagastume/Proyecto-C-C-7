@@ -43,4 +43,8 @@ Cambios PJ2 - CC7:
 	3. Se verifica si hay file descriptors asociados al thread, si los hay entonces se verifica que fd que se da en la función esta abierto y si pertenece al thread actual, si es verdad entonces se procede a escribir el archivo con la función file_write() (definida en fylesys/file.h).
 
 
+* La función unsigned syscall_tell(int fd) lo que hace es devolver el siguiente byte que será leído o escrito en el file descriptor del archivo que esta abierto expresado en bytes en el inicio del archivo, donde la position 0 es el incicio del archivo. Para llevar a cabo esta función se verifica si hay file descriptors asociados al thread, si los hay entonces se verifica que fd que se da en la función esta abierto y si pertenece al thread actual, y si eso se cumple entonces se realiza el file_tell() (definido en filesys/file.h) del archivo ubicado en los file descriptors del thread actual.  
+
+* La función void syscall_close(int fd) lo que hace es cerrar el file descriptor fd, lo cual implica salir o terminar todos sus file descriptors que están abiertos como si se llamara esta función para todos esos file descriptors. Para llevar a cabo esta función se verifica si hay file descriptors asociados al thread, si los hay entonces se verifica que fd que se da en la función esta abierto y si pertenece al thread actual, y si eso se cumple entonces se realiza el file_close() (definido en filesys/file.h) del archivo dado y se remueven los file descriptors de la lista de file descriptors del thread actual uno por uno como sugiere este función.  
+
 //------------------------------------- System Calls --------------------------------------------------------//

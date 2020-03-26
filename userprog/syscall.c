@@ -206,7 +206,7 @@ syscall_write(int fd, const void* buffer, unsigned size){
 
 	      if (fdCT == fd) {
 	        struct file* fileFD = fd_t->file;
-	        //Se lee el archivo
+	        //Se escribe el archivo
 	        bytes_to_write = (int)file_write(fileFD,buffer,size);
 	        lock_release(&lockFS);
 	        break;
@@ -215,4 +215,100 @@ syscall_write(int fd, const void* buffer, unsigned size){
 
   	lock_release(&lockFS);
   	return bytes_to_write;
+}
+
+void 
+syscall_seek(int fd, unsigned position){
+	lock_acquire(&lockFS);
+
+	struct thread* curr = thread_current();
+
+	if(!list_empty(&curr->fdList)){
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        //Se busca en el archivo y en la position indicada
+	        file_seek(fileFD, position);
+	        lock_release(&lockFS);
+	        return;
+      	   }
+  		}
+  		lock_release(&lockFS);
+  		return;
+	}else{//De forma contraria hace return indicando que no hay file descriptors
+		lock_release(&lockFS);
+		return;
+	}
+
+}
+
+unsigned 
+syscall_tell(int fd){
+	unsigned pos = -1;
+	lock_acquire(&lockFS);
+
+	struct thread* curr = thread_current();
+
+	if(!list_empty(&curr->fdList)){
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        //Se busca y se devuelve la siguiente posición a leer o escribir
+	        pos = (unsigned)file_tell(fileFD);
+	        lock_release(&lockFS);
+	        break;
+      	   }
+  		}
+  		lock_release(&lockFS);
+	}else{//De forma contraria se libera el lock
+		lock_release(&lockFS);
+	}
+
+	lock_release(&lockFS);
+	return pos;
+}
+
+void 
+syscall_close(int fd){
+	lock_acquire(&lockFS);
+
+	struct thread* curr = thread_current();
+
+	if(!list_empty(&curr->fdList)){
+		//List elem para iterar en la lista
+		struct list_elem* iter_;
+		for (iter_ = list_front(&curr->fdList); iter_ != NULL; iter_ = iter_->next){
+		 //Se verifica que el file descriptor esta abierto y el dueño es el thread actual
+	      struct fileDescriptor* fd_t = list_entry(iter_, struct fileDescriptor, felem);
+	      int fdCT = fd_t->fileDescriptor;
+
+	      if (fdCT == fd) {
+	        struct file* fileFD = fd_t->file;
+	        //Se cierra el archivo
+	        file_close(fileFD);
+	        //Se remueve el archivo de la lista de file descriptors del thread actual
+	        list_remove(&fd_t->felem);
+	        
+	        lock_release(&lockFS);
+	        return;
+      	   }
+  		}
+  		lock_release(&lockFS);
+  		return;
+	}else{//De forma contraria hace return indicando que no hay file descriptors
+		lock_release(&lockFS);
+		return;
+	}
 }
