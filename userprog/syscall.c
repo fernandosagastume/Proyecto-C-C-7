@@ -11,6 +11,8 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "devices/input.h"
+#include "threads/vaddr.h"
+#include "userprog/pagedir.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -37,11 +39,182 @@ syscall_init (void)
   lock_init(&lockFS);
 }
 
+void pointers_validation(void* vaddr){
+	struct thread* curr = thread_current();
+	//Se verifica que estemos en user space
+	if(!is_user_vaddr(vaddr))
+		syscall_exit(-1);
+
+	else if(!(pagedir_get_page (curr->pagedir, vaddr)))
+		syscall_exit(-1);;
+}
+
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
-{
-  printf ("system call!\n");
-  thread_exit ();
+syscall_handler (struct intr_frame *f UNUSED) {
+
+	struct thread* curr = thread_current();
+	const void* vaddr = (const void *)f->esp;
+	//Se verifica que estemos en user space
+	if(!is_user_vaddr(vaddr))
+		syscall_exit(-1);
+
+	else if(!(pagedir_get_page (curr->pagedir, vaddr)))
+		syscall_exit(-1);
+
+	//Arreglo para guardar los argumentos del stack.
+	int *argSt = (int *)malloc(sizeof(int)*3); 
+
+	switch(*(int*)f->esp){
+		case SYS_HALT:
+		{
+			syscall_halt();
+			break;
+		}
+		case SYS_EXIT:
+		{
+			break;
+		}
+		case SYS_EXEC:
+		{
+			break;
+		}
+		case SYS_WAIT:
+		{
+			break;
+		}
+//------------------------------------------
+		case SYS_WRITE:
+		{
+			int* esp = (int *)f->esp;
+			//Se obtienen los argumentos del stack
+			for (int i = 0; i < 3; i++) {
+			    int *ag = ((esp + i) + 1);
+			    //Se valida que se este en user space
+			    pointers_validation(ag);
+			    argSt[i] = *ag;
+			}
+
+			argSt[1] = (int)pagedir_get_page (curr->pagedir, (const void *)argSt[1]);
+      		f->eax = syscall_write((int)argSt[0], (void*)argSt[1], (unsigned)argSt[2]);
+			break;
+		}
+		case SYS_READ:
+		{
+			int* esp = (int *)f->esp;
+			//Se obtienen los argumentos del stack
+			for (int i = 0; i < 3; i++) {
+			    int *ag = ((esp + i) + 1);
+			    //Se valida que se este en user space
+			    pointers_validation(ag);
+			    argSt[i] = *ag;
+			}
+
+      		f->eax = syscall_read((int)argSt[0], (void *)argSt[1], (unsigned)argSt[2]);
+			break;
+		}
+		case SYS_CREATE:
+		{
+			int* esp = (int *)f->esp;
+			//Se obtienen los argumentos del stack
+			for (int i = 0; i < 2; i++) {
+			    int *ag = ((esp + i) + 1);
+			    //Se valida que se este en user space
+			    pointers_validation(ag);
+			    argSt[i] = *ag;
+			}
+
+			f->eax = syscall_create((const char*)argSt[0], (unsigned)argSt[1]);
+			break;
+		}
+		case SYS_REMOVE:
+		{
+			int* esp = (int *)f->esp;
+			int *ag = ((esp + 1) + 1);
+			//Se valida que se este en user space
+			pointers_validation(ag);
+			argSt[0] = *ag;
+			void* physPage = pagedir_get_page (curr->pagedir,(const void *)argSt[0]);
+			argSt[0] = (int)physPage;
+
+			if (physPage == NULL)
+	        {
+	          	syscall_exit(-1);
+	        }
+
+	        f->eax = syscall_remove((const char*)argSt[0]);
+			break;
+		}
+		case SYS_OPEN:
+		{
+			int* esp = (int *)f->esp;
+			int *ag = ((esp + 1) + 1);
+			//Se valida que se este en user space
+			pointers_validation(ag);
+			argSt[0] = *ag;
+			void* physPage = pagedir_get_page (curr->pagedir,(const void *)argSt[0]);
+			argSt[0] = (int)physPage;
+
+			if (physPage == NULL)
+	        {
+	          	syscall_exit(-1);
+	        }
+
+	        f->eax = syscall_open((const char*)argSt[0]);
+			break;
+		}
+		case SYS_FILESIZE:
+		{
+			int* esp = (int *)f->esp;
+			int *ag = ((esp + 1) + 1);
+			//Se valida que se este en user space
+			pointers_validation(ag);
+			argSt[0] = *ag;
+
+	        f->eax = syscall_filesize((int)argSt[0]);
+			break;
+		}
+		case SYS_CLOSE:
+		{
+			int* esp = (int *)f->esp;
+			int *ag = ((esp + 1) + 1);
+			//Se valida que se este en user space
+			pointers_validation(ag);
+			argSt[0] = *ag;
+
+	        syscall_close((int)argSt[0]);
+			break;
+		}
+		case SYS_TELL:
+		{	
+			int* esp = (int *)f->esp;
+			int *ag = ((esp + 1) + 1);
+			//Se valida que se este en user space
+			pointers_validation(ag);
+			argSt[0] = *ag;
+
+	        f->eax = syscall_tell((int)argSt[0]);
+			break;
+		}
+		case SYS_SEEK:
+		{
+			int* esp = (int *)f->esp;
+			//Se obtienen los argumentos del stack
+			for (int i = 0; i < 2; i++) {
+			    int *ag = ((esp + i) + 1);
+			    //Se valida que se este en user space
+			    pointers_validation(ag);
+			    argSt[i] = *ag;
+			}
+
+			syscall_seek((int)argSt[0], (unsigned)argSt[1]);
+			break;
+		}
+		default:
+		{
+			syscall_exit(-1);
+			break;
+		}
+	}
 }
  void 
  syscall_halt (void){
@@ -300,7 +473,7 @@ syscall_close(int fd){
 	        file_close(fileFD);
 	        //Se remueve el archivo de la lista de file descriptors del thread actual
 	        list_remove(&fd_t->felem);
-	        
+
 	        lock_release(&lockFS);
 	        return;
       	   }

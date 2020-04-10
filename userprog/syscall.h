@@ -3,6 +3,7 @@
 #define USERPROG_SYSCALL_H
 
 void syscall_init (void);
+void pointers_validation(void* vaddr);
 void syscall_halt (void); 
 void syscall_exit (int exit_status);
 bool syscall_create(const char* file, unsigned initial_size);
